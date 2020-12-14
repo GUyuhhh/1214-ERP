@@ -1,0 +1,331 @@
+page 50100 "Custoner Rewards Wizard"
+{
+    PageType = NavigatePage;
+    Caption = 'Customer Rewards assistend setup guide';
+    ContextSensitiveHelpPage = 'sales-rewards';
+
+    layout
+    {
+        area(content)
+        {
+            group(MediaStandard)
+            {
+                Caption = '';
+                Editable= false;
+                Visible = TopBannerVisible;
+
+                field ("MediaResourcesStandard.""Media Reference""": MediaResourcesStandard."Media Reference")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    ShowCaption = false;
+                }
+            }
+
+            group (FirstPage)
+            {
+                Caption = '';
+                Visible = FirstPageVisible;
+
+                group("Welcome")
+                {
+                    Caption = 'Welcome';
+                    Visible = FirstPageVisible;
+                    group(Introduction)
+                    {
+                        Caption = '';
+                        InstructionalText = 'This Customer Rewards extension is a sample extension.It adds rewards tiers support for Customers.';
+                        Visible = FirstPageVisible;
+
+                        field(Space1;'')
+                        {
+                            ApplicationArea = All;
+                            ShowCaption = false;
+                            Editable = false;
+                            MultiLine = true;
+                        }
+                    }
+                    group("Terms")
+                    {
+                        Caption = 'Terms of Use';
+                        Visible = FirstPageVisible;
+
+                        group(Terms1)
+                        {
+                            Caption = '';
+                            InstructionalText = 'By enabling the Customer Rewards extension...';
+                            Visible = FirstPageVisible;
+                        }
+                    }
+                    group(Trems2)
+                    {
+                        Caption = '';
+
+                        field(EnableFeature; EnableCustomerRewards)
+                        {
+                            ApplicationArea = All;
+                            MultiLine = trus
+                            ;
+                            Editable = true;
+                            Caption = 'I understand and accept these terms.';
+
+                            trigger OnValidate();
+                            begin
+                                ShowFirstPage;
+                            end;
+                        } 
+                    }
+                }
+            }
+            group(SecondPage)
+            {
+                Caption = '';
+                Visible= SecondPageVisible;
+
+                group("Activation")
+                {
+                    Caption = 'Activation';
+                    Visible = SecondPageVisible;
+
+                    field(Spacer2;'')
+                    {
+                        ApplicationArea = All;
+                        ShowCaption = false;
+                        Editable = false;
+                        MultiLine = true;
+                    }
+
+                    group(ActivationMessage)
+                    {
+                        Caption = '';
+                        InstructionalText = 'Enter your 14 digit activation code to continue';
+                        Visible = SecondVisible;
+
+                        field(Activationcode; ActivationCode)
+                        {
+                            ApplicationArea = All;
+                            ShowCaption = false;
+                            Editable = true;
+                
+                        }
+                    }
+                }
+            }
+
+            group(FinalPage)
+            {
+                Caption= '';
+                Visible = FianlPageVisible;
+
+                group("ActivationDone")
+                {
+                    Caption= 'You''re done!';
+                    Visible = FinalPageVisible;
+
+                    group("ActivationDone")
+                    {
+                        Caption = 'You ''re done';
+                        Visible = FinalPageVisible;
+
+                        group(DoneMessage)
+                        {
+                            Caption = '';
+                            InstructionalText = 'Click Finish to setup your rewards level and star using Customer Rewards.';
+                            Visible = FinalPageVisibles;
+                        }
+                    }
+                }
+            }
+        }
+        actions
+        {
+            area(Processing)
+            {
+                action(ActionBack)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Back';
+                    Enabled = BackEnabled;
+                    Visible = BackEnabled;
+                    Image = PreviousRecord;
+                    InFooterBar = true;
+
+                    trigger OnAction();
+                    begin
+                        NextStep(true);
+
+                    end;
+                }
+                action(ActionNext)
+                {
+                    ApplicationArea= All;
+                    Caption= 'Next';
+                    Enabled = NextEnabled;
+                    Visible = NextRecord;
+                    InFooterBar = true;
+
+                    trigger OnAction();
+                    begin
+                        NextStep(false);
+                    end;
+                }
+                action(ActionActivate)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Activate';
+                    Enabled = ActivateEnabled;
+                    Visible = ActivateEnabled;
+                    Image = NextRecord;
+                    InFooterBar = true;
+                    
+                    trigger OnAction();
+                    var
+                    CustomerRewardsExtMgt: Codeunit"Customer Rewards Ext.Mgt.";
+                    begin
+                        if ActivationCode = '' then
+                            Error('Activation code cannot be blank.');
+                        if Text.StrLen(ActivationCode)<> 14 then
+                            Error('Activation code must have 14 digits');
+                        if CustomerRewardsExMgt.ActivateCustomerRewards(ActivationCode)then
+                            NextStep(false)
+                        else
+                            Error('Activation failed.Please check the avtivtion code you entered.');
+                    end; 
+
+                    
+                }
+                action (ActionFinfsh)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Finish';
+                    Enabled= FinalPageVisible;
+                    Image = Approve;
+                    InFooterBar = true;
+
+                    trigger OnAction();
+                    begin
+                        FinishAndEnableCustomerRewards
+                    end;
+                
+                     
+                }
+            }
+        }
+
+        trigger OnInit();
+        begin
+            LoadTopBanners;
+        
+        end;
+
+        trigger OnOpenPage();
+        begin
+            Step := Step::First;
+            EnableControls;
+        end;
+        local procedure EnableControls();
+        begin
+            ResetControls;
+
+            
+    
+            case Step of
+                Step::First:
+                    ShowFirstPage;
+                Step::Second:
+                    ShowSecondPage;
+                Step::Finish:
+                    ShowFinalPage;
+            end;
+        end;
+        local procedure NextStep(Backwards: Boolean);
+        begin
+            if Backwards then
+                Step :=Step - 1
+            ELSE
+                Step := Step + 1;
+            EnableControls;
+          
+        end;
+
+        local procedureFinishAndEnableCustomerRewards();
+        var
+        CustomerRewardsExtMgt:Codeunit "Customer Rewards Ext. Mge.";
+        begin
+            Currpage.Close;
+            CustomerRewardsExtMgt.OpenRewardsLevePage;
+        end;
+        local procedure ShowFirstPage();
+        begin
+            FirstPageVisible := true;
+            SecondPageVisible := false;
+            FinishEnabled := false;
+            BackEnabled := false;
+            ActivateEnabled := false;
+            NextEnabled := EnableCustomerRewards;
+
+
+        end;
+        local procedure ShowSecondPage();
+        begin
+            FirstPageVisible :- false;
+            SecondPageVisible := false;
+            FinishEnabled := false;
+            BackEnabled :=false;
+            ActivateEnabled := false;
+            NextEnabled := EnableCustomerRewards;
+        end;
+        local procedure ShowSecondPage();
+        begin
+            FirstPageVisible := false;
+            SecondPageVisible := true;
+            FinishEnabled := false;
+            BackEnabled := true;
+            NextEnabled := false;
+            ActivateEnabled := true;
+
+        end;
+        local procedure ShowFinalPage();
+        begin
+            FinishEnabled := true;
+            BackEnabled := true;
+            NextEnabled := false;
+            ActivateEnabled := false;
+        end;
+
+        local procedure ResetControls();
+        begin
+            FinishEnabled := true;
+            BackEnabled := true;
+            NextEnabled := true;
+            ActivateEnabled := true;
+            FirstPageVisible := false;
+            SecondPageVisible := false;
+            FinalPageVisible := false;
+        end;
+        local procedure LoadTopBanners();
+        begin
+            if MediaRepositoryStandard.Get('AssistedSetup-NoText-400px.png',FORMAT(CURRENTCLIENTTYPE))
+            then
+                if MediaResourcesStandard.GET(MediaRepositoryStandard."Media Resources Ref")
+            then
+                    TopBannerVisible := MediaResourcesStandard."Media Reference" .HASVALUE;
+
+        end;
+        var
+        MediaRepositoryStandard: Record 9400;
+        MediaResourcesStandard: Record 2000000182;
+        step: Option First,Second,Finish;
+        ActivationCode: Text;
+        TopBannerVisible: Boolean;
+        FirstPageVisible: Boolean;
+        SecondPageVisible: Boolean;
+        FinalPageVisible: Boolean;
+        FinishEnabled: Boolean;
+        BackEnabled: Boolean;
+        NextEnabled: Boolean;
+        ActivateEnabled: Boolean;
+        EnableCustomrRewards: Boolean;
+
+
+    }
